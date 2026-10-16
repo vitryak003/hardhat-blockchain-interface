@@ -1,0 +1,40 @@
+# Створення нового проєкту в порожній папці hardhat-blockchain-interface
+npm init -y
+npx hardhat --init
+npm install --save-dev hardhat
+
+# Встановлення залежностей готового проєкту
+npm install
+
+# Компіляція контрактів
+npx hardhat compile
+
+# Запуск тестів
+npx hardhat test
+
+# Запуск блокчейну; залишити термінал відкритим
+npx hardhat node
+
+# Деплой у блокчейн; виконати в іншому терміналі
+npx hardhat ignition deploy ignition/modules/Counter.ts --network localhost
+
+# Для готового проєкту почати з npm install.
+# npm init та hardhat --init призначені для створення нового проєкту.
+
+# Створення середовища Python у папці python (Windows)
+python -m venv python/.venv
+
+# Активація середовища в PowerShell
+.\python\.venv\Scripts\Activate.ps1
+
+# Встановлення web3 в активоване середовище
+pip install web3
+
+# Встановлення сумісних залежностей без активації середовища
+.\python\.venv\Scripts\python.exe -m pip install -r python/requirements.txt
+
+# Виведення всіх блоків; Hardhat node має працювати в іншому терміналі
+.\python\.venv\Scripts\python.exe python/blockchain/blocks.py
+
+# Перевірка Python після деплою Counter
+.\python\.venv\Scripts\python.exe -m unittest discover -s python/tests -v

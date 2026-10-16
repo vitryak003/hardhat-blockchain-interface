@@ -1,0 +1,51 @@
+name: Hardhat and Python checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: npm install
+      - name: Create Python environment and install web3
+        run: |
+          python -m venv python/.venv
+          python/.venv/bin/python -m pip install -r python/requirements.txt
+      - name: Compile
+        run: npx hardhat compile
+      - name: Test
+        run: npx hardhat test
+      - name: Start blockchain, deploy and check Python output
+        shell: bash
+        run: |
+          npx hardhat node > hardhat-node.log 2>&1 &
+          NODE_PID=$!
+          trap 'kill "$NODE_PID" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent -H 'Content-Type: application/json' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+              http://127.0.0.1:8545 | grep -q '0x7a69'; then
+              break
+            fi
+            sleep 1
+          done
+          python/.venv/bin/python python/blockchain/blocks.py
+          npx hardhat ignition deploy ignition/modules/Counter.ts --network localhost
+          node scripts/check-deployment.mjs
+          python/.venv/bin/python python/blockchain/blocks.py
+          python/.venv/bin/python -m unittest discover -s python/tests -v
